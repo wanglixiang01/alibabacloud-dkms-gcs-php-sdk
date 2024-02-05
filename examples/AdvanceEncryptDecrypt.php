@@ -23,9 +23,6 @@ $endpoint = '<your dkms instance service address>';
 // 填写您在KMS创建的主密钥Id
 $keyId = '<your cmk id>';
 
-// 加解密算法
-$algorithm = '<your encrypt algorithm>';
-
 // 待加密明文
 $plaintext = 'encrypt and decrypt sample';
 
@@ -42,9 +39,9 @@ advanceEncryptDecryptSample();
  */
 function advanceEncryptDecryptSample()
 {
-    global $client, $keyId, $plaintext, $algorithm;
+    global $client, $keyId, $plaintext;
 
-    $cipherCtx = advanceEncryptSample($client, $keyId, $plaintext, $algorithm);
+    $cipherCtx = advanceEncryptSample($client, $keyId, $plaintext);
     if ($cipherCtx !== null) {
         $decryptResult = AlibabaCloudTeaUtils::toString(advanceDecryptSample($client, $cipherCtx));
         if ($plaintext !== $decryptResult) {
@@ -60,15 +57,13 @@ function advanceEncryptDecryptSample()
  * @param AlibabaCloudDkmsGcsSdkClient $client
  * @param string $keyId
  * @param string $plaintext
- * @param string $algorithm
  * @return AdvanceEncryptContext
  */
-function advanceEncryptSample($client, $keyId, $plaintext, $algorithm)
+function advanceEncryptSample($client, $keyId, $plaintext)
 {
     // 构建加密请求
     $encryptRequest = new AdvanceEncryptRequest();
     $encryptRequest->keyId = $keyId;
-    $encryptRequest->algorithm = $algorithm;
     $encryptRequest->plaintext = AlibabaCloudTeaUtils::toBytes($plaintext);
     $runtimeOptions = new RuntimeOptions();
     // 忽略服务端证书
@@ -77,20 +72,11 @@ function advanceEncryptSample($client, $keyId, $plaintext, $algorithm)
     try {
         // 调用加密接口进行加密
         $encryptResponse = $client->advanceEncryptWithOptions($encryptRequest, $runtimeOptions);
-        // 密钥ID
-        $keyId = $encryptResponse->keyId;
-        // 主密钥是对称密钥时，decrypt接口需要加密返回的Iv
-        $iv = $encryptResponse->iv;
         // 数据密文
         $cipher = $encryptResponse->ciphertextBlob;
-        // 加密算法
-        $algorithm = $encryptResponse->algorithm;
         var_dump($encryptResponse->toMap());
         return new AdvanceEncryptContext([
-            'keyId' => $keyId,
-            'iv' => $iv,
-            'ciphertextBlob' => $cipher,
-            'algorithm' => $algorithm
+            'ciphertextBlob' => $cipher
         ]);
     } catch (\Exception $error) {
         if ($error instanceof \AlibabaCloud\Tea\Exception\TeaError) {
@@ -112,10 +98,7 @@ function advanceDecryptSample($client, $ctx)
 {
     // 构建解密请求对象
     $decryptRequest = new AdvanceDecryptRequest();
-    $decryptRequest->keyId = $ctx->keyId;
     $decryptRequest->ciphertextBlob = $ctx->ciphertextBlob;
-    $decryptRequest->algorithm = $ctx->algorithm;
-    $decryptRequest->iv = $ctx->iv;
     $runtimeOptions = new RuntimeOptions();
     // 忽略证书
     //$runtimeOptions->ignoreSSL = true;
@@ -168,23 +151,7 @@ class AdvanceEncryptContext
         }
     }
     /**
-     * @var string
-     */
-    public $keyId;
-
-    /**
-     * @var int[]
-     */
-    public $iv;
-
-    /**
      * @var int[]
      */
     public $ciphertextBlob;
-
-    /**
-     * @var string
-     * Use default algorithm value, if the value is not set
-     */
-    public $algorithm;
 }

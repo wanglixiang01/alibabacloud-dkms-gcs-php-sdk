@@ -51,8 +51,6 @@ function advanceGenerateDataKeySample(){
         $plaintext = $generateDataKeyResponse->plaintext;
         // 密文数据密钥
         $ciphertextBlob = $generateDataKeyResponse->ciphertextBlob;
-        // 由专属KMS生成的加密初始向量，解密数据密钥时需要传入
-        $iv = $generateDataKeyResponse->iv;
 
         var_dump($generateDataKeyResponse->toMap());
     } catch (\Exception $error) {
